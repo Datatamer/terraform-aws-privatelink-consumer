@@ -43,5 +43,4 @@ terratest.tf.json
 .idea/
 *.iml
 
-# Ignore makefile
-ops-makefile
+

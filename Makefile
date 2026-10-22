@@ -1,29 +1,24 @@
-ifneq (,)
-.error This Makefile requires GNU Make.
-endif
+LAMBDA_SRC = lambda/api_test_client/index.py
+LAMBDA_ZIP = lambda/api_test_client.zip
 
-GIT_PREFIX = git@github.com
+.PHONY: all fmt validate docs lambda/zip lambda/check
 
-MAKEFILE_DIR = ops-makefile
-MAKEFILE_TAG = master
-MAKEFILE_REPO = Datatamer/ops-makefile.git
+all: fmt validate lambda/zip docs
 
-export BUILD_PATH ?= $(shell 'pwd')
+fmt:
+	terraform fmt -recursive
 
-ifneq ($(shell grep $(MAKEFILE_REPO) $(BUILD_PATH)/.git/config),)
-  include $(BUILD_PATH)/Makefile.*
-  include $(BUILD_PATH)/modules/*/Makefile*
-else ifeq (,$(firstword $(wildcard $(MAKEFILE_DIR))))
-  $(shell git clone -c advice.detachedHead=false --depth=1 -b $(MAKEFILE_TAG) $(GIT_PREFIX):$(MAKEFILE_REPO))
-  include $(BUILD_PATH)/$(MAKEFILE_DIR)/Makefile.*
-  include $(BUILD_PATH)/$(MAKEFILE_DIR)/modules/*/Makefile*
-else
-  UPDATE := $(shell git -C ops-makefile pull)
-  include $(BUILD_PATH)/$(MAKEFILE_DIR)/Makefile.*
-  include $(BUILD_PATH)/$(MAKEFILE_DIR)/modules/*/Makefile*
-endif
+validate:
+	terraform init -backend=false -input=false >/dev/null
+	terraform validate
 
-EXCLUDE := $(filter-out $(MAKEFILE_DIR)/Makefile, $(wildcard $(MAKEFILE_DIR)/*))
+docs:
+	terraform-docs markdown table --lockfile=false --output-file README.md --output-mode inject .
 
-clean:
-	rm -rf $(MAKEFILE_DIR)
+lambda/zip:
+	python3 scripts/build_lambda_zip.py $(LAMBDA_SRC) $(LAMBDA_ZIP)
+
+lambda/check:
+	python3 scripts/build_lambda_zip.py $(LAMBDA_SRC) $(LAMBDA_ZIP).check
+	@cmp -s $(LAMBDA_ZIP) $(LAMBDA_ZIP).check || { rm -f $(LAMBDA_ZIP).check; echo "$(LAMBDA_ZIP) is out of date: run make lambda/zip and commit it"; exit 1; }
+	@rm -f $(LAMBDA_ZIP).check
