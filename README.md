@@ -115,7 +115,7 @@ python3 lambda/api_test_client/index.py https://your-tenant.tamr.cloud/ --count 
   Tamr's load balancer. Authorization is entirely at the application layer — your API
   credentials, not your network address.
 - **Idle connections.** AWS drops a TCP connection through an endpoint after 350 seconds with no
-  traffic. Enable TCP keepalives on long-lived clients.
+  traffic, but Tamr keeps connections alive from its side.
 - **Cost.** You pay AWS for endpoint hours and data processed, per the standard PrivateLink
   pricing. Tamr does not charge for the connection.
 
